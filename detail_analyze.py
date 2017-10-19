@@ -38,7 +38,9 @@ def one_shop_detail():
         for k,v in dic.items():
             if len(v)==1:
                 print("rssi"+str(v))
-            plt.plot(v)
+                continue
+            v = [float(t) for t in v]
+            plt.hist(v,bins = int(np.max(v))-int(np.min(v))+1)
             plt.title(shop_id+" "+k)
             plt.show()
             
