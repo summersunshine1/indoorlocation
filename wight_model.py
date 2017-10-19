@@ -14,7 +14,7 @@ evaluate_b_path = pardir+'/data/evaluation_b.csv'
 mall_dic_dir = pardir+'/data/malldic/'
 respath = pardir+'/data/res.csv'
 
-weightarr = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,5,0]
+weightarr = [100,80,60,40,20,0]
 
 def split_a_b():
     data = pd.read_csv(evaluate_public_path)
@@ -106,6 +106,24 @@ def process():
         
         write_dic(shop_wifi_range_dic,mall_dic_dir+mall_id)
         
+def get_sides_from_dic(weight_dic):
+    min = 0
+    max = -1000
+    minv = 0
+    maxv = 0
+    i = 0
+    for k,v in weight_dic.items():
+        arr = k.split('|')
+        down = float(arr[0])
+        up = float(arr[1])
+        if down<min:
+            min=down
+            minv = float(v)
+        if up>max:
+            max = up
+            maxv = float(v)
+    return min,max,minv,maxv
+        
 def getweight(strength,weight_dic):
     # print(strength)
     # print(weight_dic)
@@ -113,10 +131,17 @@ def getweight(strength,weight_dic):
         arr = k.split('|')
         down = float(arr[0])
         up = float(arr[1])
+        # downs.append(down)
+        # ups.append(up)
         # print(down)
         # print(up)
         if strength>down and strength<=up:
             return float(v)
+    min,max,minv,maxv = get_sides_from_dic(weight_dic)
+    if np.abs(min-strength)<1:
+        return minv
+    if np.abs(max-strength)<1:
+        return maxv
 
 def create_model():
     data = pd.read_csv(evaluate_a_path)
@@ -140,7 +165,7 @@ def create_model():
                     if not shop_id in countdic:
                         countdic[shop_id]=0
                     weight_dic = bssid_info[bssid]['weight']
-                    countdic[shop_id]+=getweight(strength,weight_dic)
+                    countdic[shop_id]+=getweight(strength,weight_dic)*weightarr[int(np.floor(strength/20))]
         dict = sorted(countdic.items(),key=lambda d:d[1])
         a = [d[1] for d in dict]
         b = [d[0] for d in dict]
@@ -180,14 +205,16 @@ def append_res_file():
 
 if __name__=="__main__":
     # split_a_b()
-    dic = read_dic(mall_dic_dir+'m_1021')
-    print(dic)
+    # print(pardir)
+    # dic = read_dic(pardir+'/data/mallwifi_dic.txt')
+    # print(dic)
     # move_to_different_mallfiles()
     # process()
-    # resdic = create_model()
-    # write_res_to_file(resdic)
+    resdic = create_model()
+    write_res_to_file(resdic)
     # get_strength_range([1,5,7,8,15])
-    # append_res_file()
+    append_res_file()
+    # getweight(-80,{'-90.1|-80.2':0.1})
         
     
 
