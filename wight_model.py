@@ -169,18 +169,25 @@ def write_res_to_file(dic):
         for k,v in dic.items():
             lines = str(k)+','+str(v)+'\n'
             f.writelines(lines)
-            
-        
+          
+def append_res_file():
+    data = pd.read_csv(evaluate_b_path)
+    row_ids = data['row_id']
+    with open(respath,mode = 'a',encoding='utf-8') as f:
+        for row_id in row_ids:
+            lines = str(row_id)+',\n'
+            f.writelines(lines)
 
 if __name__=="__main__":
     # split_a_b()
-    # dic = read_dic(mall_dic_dir+'m_1021')
-    # print(dic)
-    move_to_different_mallfiles()
-    process()
-    resdic = create_model()
-    write_res_to_file(resdic)
+    dic = read_dic(mall_dic_dir+'m_1021')
+    print(dic)
+    # move_to_different_mallfiles()
+    # process()
+    # resdic = create_model()
+    # write_res_to_file(resdic)
     # get_strength_range([1,5,7,8,15])
+    # append_res_file()
         
     
 
