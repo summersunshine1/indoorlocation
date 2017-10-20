@@ -53,13 +53,22 @@ def compare_res(res1,res2):
     rowids = d1['row_id']
     shopids = d1['shop_id']
     d2 =pd.read_csv(res2)
+    rowids1 = d2['row_id']
+    shopids1 = d2['shop_id']
     length = len(rowids)
     count=0
+    dic = {}
     for i in range(length):
-        shop = d2['shop_id'][d2['row_id']==rowids[i]]
-        shop = shop.iloc[0]
-        if shop == shopids[i]:
-            count+=1
+        if not rowids[i] in dic:
+            dic[rowids[i]] = []
+        dic[rowids[i]].append(shopids[i])
+        if not rowids1[i] in dic:
+            dic[rowids1[i]] = []
+        dic[rowids1[i]].append(shopids1[i])
+    for k,v in dic.items():
+        if v[0]==v[1]:
+            cpunt+=1
+        
     print(count/length)
     
 def convertLabels(arr,pickle_path):
@@ -77,12 +86,12 @@ def process_wifi_info(wifi_info):
     f1 = lambda x : x.split('|')[0]
     f2 = lambda x : int(x.split('|')[1])
     arr = np.array(wifi_info.split(";"))
-    bssids = np.fromiter((f1(xi) for xi in arr), arr.dtype, count=len(arr))
-    strengths= np.fromiter((f2(xi) for xi in arr), arr.dtype, count=len(arr))
+    bssids = list(np.fromiter((f1(xi) for xi in arr), arr.dtype, count=len(arr)))
+    strengths= list(np.fromiter((f2(xi) for xi in arr), arr.dtype, count=len(arr)))
     return bssids,strengths
     
 def get_mallid_from_mallpath(path):
-    mallpath = od.path.basename(path)
+    mallpath = os.path.basename(path)
     mall_id = mallpath[:-4]
     return mall_id
     

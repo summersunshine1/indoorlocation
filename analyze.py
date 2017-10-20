@@ -14,6 +14,8 @@ evaluate_path = pardir + '/data/evaluation_public.csv'
 
 mall_wifi_dic_path = pardir+'/data/mallwifi_dic.txt'
 malldir = pardir+'/data/mall/'
+evaluate_a_path = pardir+'/data/evaluation_a.csv'
+testmalldir = pardir+'/data/rawtestmall/'
 
 def haversine(lon1, lat1, lon2, lat2):
     """
@@ -109,7 +111,7 @@ def getmall_wifi_dic_info():
                     print(inter)
                 
  
-def move_to_different_mallfiles():
+def move_to_different_mallfiles(shop_behavior_path,malldir):
     chunksizes = 100
     mall_shop_dic,shop_info_dic,shop_mall_dic = getshopinfo()
     data = pd.read_csv(shop_behavior_path, chunksize = chunksizes)
@@ -119,10 +121,32 @@ def move_to_different_mallfiles():
         for i in range(length):
             shop_id = shop_ids.iloc[i]
             mall_id = shop_mall_dic[shop_id]
-            path = malldir+mall_id+".csv"
+            path = malldir +mall_id+".csv"
             df = pd.DataFrame(chunk.iloc[[i]])
             write_record(df,path)
             print(i)
+            
+def move_to_different_test_mallfiles(shop_behavior_path,malldir):
+    chunksizes = 100
+    # mall_shop_dic,shop_info_dic,shop_mall_dic = getshopinfo()
+    data = pd.read_csv(shop_behavior_path)
+    data['shop_id']="m_00"
+    mall_ids = data['mall_id'] 
+    length = len(mall_ids)
+    for i in range(length):
+        mall_id = mall_ids.iloc[i]
+        path = malldir +mall_id+".csv"
+        df = pd.DataFrame(data.iloc[[i]])
+        write_record(df,path)
+    
+    # for chunk in data:
+        # mall_ids = chunk['mall_id']
+        # length = len(mall_ids)
+        # for i in range(length):
+            # mall_id = mall_ids.iloc[i]
+            # path = malldir +mall_id+".csv"
+            # df = pd.DataFrame(chunk.iloc[[i]])
+            # write_record(df,path)
 
 def evaluate():
     mall_shop_dic,shop_info_dic,shop_mall_dic = getshopinfo()
@@ -181,5 +205,5 @@ if __name__=="__main__":
     # print(mall_wifi_dic)
     # getmall_wifi_dic_info()
     # print_mall_shop()
-    move_to_different_mallfiles()
+    move_to_different_test_mallfiles(evaluate_a_path,malldir)
     

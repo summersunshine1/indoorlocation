@@ -195,7 +195,7 @@ def write_res_to_file(dic):
             lines = str(k)+','+str(v)+'\n'
             f.writelines(lines)
           
-def append_res_file():
+def append_res_file(respath):
     data = pd.read_csv(evaluate_b_path)
     row_ids = data['row_id']
     with open(respath,mode = 'a',encoding='utf-8') as f:
