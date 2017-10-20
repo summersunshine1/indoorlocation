@@ -54,8 +54,10 @@ def compare_res(res1,res2):
     shopids = d1['shop_id']
     d2 =pd.read_csv(res2)
     length = len(rowids)
+    count=0
     for i in range(length):
         shop = d2['shop_id'][d2['row_id']==rowids[i]]
+        shop = shop.iloc[0]
         if shop == shopids[i]:
             count+=1
     print(count/length)

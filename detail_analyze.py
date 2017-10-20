@@ -47,7 +47,8 @@ def one_shop_detail():
 
 if __name__=="__main__":
     # one_record_detail()
-    one_shop_detail()    
+    # one_shop_detail()    
+    compare_res(pardir+'/data/oldres.csv',pardir+'/data/res.csv')
                 
         
     
