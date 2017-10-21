@@ -7,6 +7,10 @@ import sklearn.preprocessing as pp
 from scipy.sparse import csc_matrix
 from sklearn import preprocessing
 from sklearn.externals import joblib
+import threading
+import time
+from getPath import *
+pardir = getparentdir()
 
 
 def write_dic(dic,path):
@@ -65,9 +69,14 @@ def compare_res(res1,res2):
         if not rowids1[i] in dic:
             dic[rowids1[i]] = []
         dic[rowids1[i]].append(shopids1[i])
+    
     for k,v in dic.items():
+        # print(k)
+        if len(v)<2:
+            print(k)
+            continue
         if v[0]==v[1]:
-            cpunt+=1
+            count+=1
         
     print(count/length)
     
@@ -81,6 +90,11 @@ def getlabels_detail(labels,pickle_path):
     le = joblib.load(pickle_path)
     arr = le.inverse_transform(labels)
     return arr   
+    
+def get_labels(pickle_path,arr):
+    clf = joblib.load(pickle_path)
+    labels = le.transform(arr)
+    return labels
     
 def process_wifi_info(wifi_info):
     f1 = lambda x : x.split('|')[0]
@@ -96,6 +110,73 @@ def get_mallid_from_mallpath(path):
     return mall_id
     
 
+    
+def write_res_to_file(dic,respath):
+    with open(respath,mode = 'w',encoding='utf-8') as f:
+        f.writelines("row_id,shop_id\n")
+        for item in dic:
+            lines = str(item[0])+','+str(item[1])+'\n'
+            f.writelines(lines)
+            
+          
+def append_res_file(respath,evaluate_path):
+    data = pd.read_csv(evaluate_path)
+    row_ids = data['row_id']
+    with open(respath,mode = 'a',encoding='utf-8') as f:
+        for row_id in row_ids:
+            lines = str(row_id)+',\n'
+            f.writelines(lines)
+            
+def thread(func,argarr):
+    processThread = threading.Thread(target=func, args=argarr) # <- 1 element list
+    return processThread
+    
+def start_thread(thread):
+    thread.start()
+    thread.join()
+    
+def my_custom_loss_func(ground_truth, predictions):
+    ground_truth = np.array(ground_truth)
+    predictions = np.array(predictions)
+    return len(ground_truth[ground_truth == predictions])/len(ground_truth)
+    
+def getlowmall(middlepath):
+    path = middlepath
+    malls = []
+    with open(path,'r',encoding='utf-8') as f:
+        lines = f.readlines()
+        arr = []
+        for line in lines:
+            a = float(line.split(':')[1])
+            if a<0.8:
+                malls.append(line.split(':')[0])
+    return malls
+    
+def getaccuracy(middleoutput):
+    path = middleoutput
+    with open(path,'r',encoding='utf-8') as f:
+        lines = f.readlines()
+        arr = []
+        for line in lines:
+            a = float(line.split(':')[1])
+            arr.append(a)
+        m = np.mean(arr)
+        print(m)
+        
+def remove_replicate_res(respath):
+    with open(respath,'r',encoding='utf-8') as f:
+        lines = f.readlines()
+        kvdic = {}
+        for line in lines[1:]:
+            line = line.strip('\n')
+            arr = line.split(',')
+            kvdic[int(arr[0])]=arr[1]
+    dict = sorted(kvdic.items(),key=lambda d:d[0])
+    
+    write_res_to_file(dict,respath)
+    
+
+
 if __name__=="__main__":
     # a = [1,1,3,4,5]
     # b = [0,1,2,4]
@@ -103,6 +184,8 @@ if __name__=="__main__":
     arr = ['a','b','c','c']
     labels = convertLabels(arr,"1")
     print(getlabels_detail(labels,'1'))
+    compare_res(pardir+'/data/res/oldres.csv',pardir+'/data/res/rf.csv')
+    remove_replicate_res(pardir+'/data/res/rf.csv')
     
     
 

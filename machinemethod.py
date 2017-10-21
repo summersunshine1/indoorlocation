@@ -9,7 +9,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score,KFold, train_test_split, GridSearchCV
 from sklearn.externals import joblib
 from sklearn.svm import SVR,LinearSVR,SVC
-from xgboost import XGBClassifier
 
 from commonLib import *
 from getPath import *
@@ -213,12 +212,7 @@ def write_pca():
     while 1:
         time.sleep(1000)
     
-def my_custom_loss_func(ground_truth, predictions):
-    ground_truth = np.array(ground_truth)
-    print(ground_truth)
-    print(predictions)
-    predictions = np.array(predictions)
-    return len(ground_truth[ground_truth == predictions])/len(ground_truth)
+
         
 def create_model(paths):
     for path in paths:
@@ -228,8 +222,7 @@ def create_model(paths):
         x = pca_data[:,:-1]
         y = pca_data[:,-1]
         X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
-        # clf = LogisticRegression()
-        clf = XGBClassifier()
+        clf = LogisticRegression()
         clf.fit(x, y)   
         score = make_scorer(my_custom_loss_func, greater_is_better=True)
         scores = -cross_val_score(clf, x, y,cv=10,scoring=score)
@@ -248,24 +241,36 @@ def create_model_split(paths):
         x = pca_data[:,:-1]
         y = pca_data[:,-1]
         X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
-        # clf = SVC(kernel ='linear')
-        clf = XGBClassifier()
+        clf = SVC(kernel ='linear')
         clf.fit(X_train, y_train) 
         # print(y_train[y_train!=0])
         p = clf.predict(X_test)
-        print(my_custom_loss_func(p,y_test))
+        loss = my_custom_loss_func(p,y_test)
+        print(mall_id+":"+str(loss))
+        lines = mall_id+":"+str(loss)
+        write_middle_res(lines)
         joblib.dump(clf, model_dir+mall_id)
+        
+
         
 def train():
     files = listfiles(pca_train_dir)
-    length = len(files)  
+    length = len(files) 
+    newfiles = []
+    for file in files:
+        mall_id = os.path.basename(file)
+        if os.path.exists(model_dir+mall_id):
+            continue
+        newfiles.append(file)
+    length = len(newfiles) 
     try:
-        _thread.start_new_thread(create_model_split, (files[0:int(length*0.25)],))
-        _thread.start_new_thread(create_model_split, (files[int(length*0.25):int(length*0.5)],))
-        _thread.start_new_thread(create_model_split, (files[int(length*0.5):int(length*0.75)],))
-        _thread.start_new_thread(create_model_split, (files[int(length*0.75):],))
-    except:
-        print ("Error: unable to start thread")
+        _thread.start_new_thread(create_model_split, (newfiles[0:int(length*0.25)],))
+        _thread.start_new_thread(create_model_split, (newfiles[int(length*0.25):int(length*0.5)],))
+        _thread.start_new_thread(create_model_split, (newfiles[int(length*0.5):int(length*0.75)],))
+        _thread.start_new_thread(create_model_split, (newfiles[int(length*0.75):],))
+    except Exception as e: 
+        print(e)
+        # print ("Error: unable to start thread")
     while 1:
         time.sleep(1000)
         
@@ -296,14 +301,18 @@ def append_res_file(respath):
 
 
 if __name__=="__main__":
-    train()
-    # predict(pca_test_dir)
+    # write_pca()
+    # train()
+    predict(pca_test_dir)
     # append_res_file(res_path)
     # train()
     # create_model_split([pca_dir+'m_625'])
     # labels = getlabels_detail([1],label_pkl_dir+'m_625')
     # print(labels)
-    # data = read_dic(pca_dir+'m_625')
+    # data = read_dic(mall_ta+'m_6167')
+    # print(np.shape(data))
+    # data = read_dic(pca_dir+'m_4495')
+    # print(np.shape(data))
     # y = data[:,-1]
     # i = y[y!=0]
     # labels = getlabels_detail([i[0]],label_pkl_dir+'m_625')

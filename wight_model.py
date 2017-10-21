@@ -188,20 +188,7 @@ def create_model():
                 # plt.show()
         # else:
             # print("zero")
-def write_res_to_file(dic):
-    with open(respath,mode = 'w',encoding='utf-8') as f:
-        f.writelines("row_id,shop_id\n")
-        for k,v in dic.items():
-            lines = str(k)+','+str(v)+'\n'
-            f.writelines(lines)
-          
-def append_res_file(respath):
-    data = pd.read_csv(evaluate_b_path)
-    row_ids = data['row_id']
-    with open(respath,mode = 'a',encoding='utf-8') as f:
-        for row_id in row_ids:
-            lines = str(row_id)+',\n'
-            f.writelines(lines)
+
 
 if __name__=="__main__":
     # split_a_b()

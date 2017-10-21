@@ -196,14 +196,40 @@ def detect_null_value():
     # data = pd.read_csv(shop_info_path)
     # print(data[data.isnull()])
     # del data
+    
+
+        
+def read_res(respath):
+    path = respath
+    data = pd.read_csv(path)
+    row_ids = data['row_id']
+    shop_ids = data['shop_id']
+    dic = {}
+    for i in range(len(row_ids)):
+        if not row_ids[i] in dic:
+            dic[row_ids[i]]=[]
+        dic[row_ids[i]].append(shop_ids[i])
+    # res_dic = {}
+    # for k,v in dic.items():
+        # res_dic[k]=v[0]
+    # newpath = pardir+'/data/pca_res_new.csv'
+    # write_res_to_file(res_dic,newpath)
+    # append_res_file(newpath,evaluate_b_path)
+    
+
+                
 
 if __name__=="__main__":
-    # mall_shop_dic,shop_info_dic = getshopinfo()
+    mall_shop_dic,shop_info_dic = getshopinfo()
     # detect_null_value()
     # move_to_different_mallfiles()    
     # mall_wifi_dic = get_user_shop_info()
     # print(mall_wifi_dic)
     # getmall_wifi_dic_info()
     # print_mall_shop()
-    move_to_different_test_mallfiles(evaluate_a_path,malldir)
+    # move_to_different_test_mallfiles(evaluate_a_path,malldir)
+    # getaccuracy()
+    # getlowmall()
+    # append_res_file(pardir+'/data/res/rf.csv',pardir+'/data/evaluation_b.csv')d2 =pd.read_csv(res2)
+    
     
