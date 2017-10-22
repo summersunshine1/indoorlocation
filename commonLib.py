@@ -59,7 +59,7 @@ def compare_res(res1,res2):
     d2 =pd.read_csv(res2)
     rowids1 = d2['row_id']
     shopids1 = d2['shop_id']
-    length = len(rowids)
+    length = 236798
     count=0
     dic = {}
     for i in range(length):
@@ -181,11 +181,13 @@ if __name__=="__main__":
     # a = [1,1,3,4,5]
     # b = [0,1,2,4]
     # print(compute_cos(a,b))
-    arr = ['a','b','c','c']
-    labels = convertLabels(arr,"1")
-    print(getlabels_detail(labels,'1'))
-    compare_res(pardir+'/data/res/oldres.csv',pardir+'/data/res/rf.csv')
-    remove_replicate_res(pardir+'/data/res/rf.csv')
+    # arr = ['a','b','c','c']
+    # labels = convertLabels(arr,"1")
+    # print(getlabels_detail(labels,'1'))
+    # compare_res(pardir+'/data/res/rf_100_change_label.csv',pardir+'/data/res/rf_max.csv')
+    compare_res(pardir+'/data/res/rf_100_change_label_remove.csv',pardir+'/data/res/rf_max.csv')
+    # remove_replicate_res(pardir+'/data/res/rfnew.csv')
+    # getaccuracy(pardir+'/data/modeloutput')
     
     
 

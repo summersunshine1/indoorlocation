@@ -66,18 +66,18 @@ def get_important_shop_bssid(filelist):
             shop_impor_dic = {}
             shopbssidtotallen = get_dic_sum(mall_shop_dic[shop_id])
             for bssid,strengths in bssiddic.items():
-                # if len(strengths)<5:
-                    # continue
                 bssidlen = len(mall_wifi_dic[bssid])
                 str = [int(t) for t in strengths]
                 # if len(str)>2:
                     # str.remove(np.max(str))
                     # str.remove(np.min(str))
-                shop_impor_dic[bssid]=len(strengths)/(-np.median(str))
+                # shop_impor_dic[bssid]=(len(strengths))/((np.median(str))/(np.max(str)))
+                shop_impor_dic[bssid]=len(strengths)/np.square(np.max(str))
+                # shop_impor_dic[bssid]=len(strengths)/-np.max(str)
             dict = sorted(shop_impor_dic.items(),key=lambda d:d[1])
             a = [d[1] for d in dict]
             b = [d[0] for d in dict]
-            for t in b[-15:]:
+            for t in b[-20:]:
                 mall_bssid_set.add(t)
         bssiddics[mall_id] = list(mall_bssid_set)
         print(mall_id)
