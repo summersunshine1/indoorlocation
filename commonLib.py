@@ -99,17 +99,23 @@ def get_labels(pickle_path,arr):
 def process_wifi_info(wifi_info):
     f1 = lambda x : x.split('|')[0]
     f2 = lambda x : int(x.split('|')[1])
+    f3 = lambda x : x.split('|')[2]
     arr = np.array(wifi_info.split(";"))
     bssids = list(np.fromiter((f1(xi) for xi in arr), arr.dtype, count=len(arr)))
     strengths= list(np.fromiter((f2(xi) for xi in arr), arr.dtype, count=len(arr)))
-    return bssids,strengths
+    connects= list(np.fromiter((f3(xi) for xi in arr), arr.dtype, count=len(arr)))
+    return bssids,strengths,connects
     
 def get_mallid_from_mallpath(path):
     mallpath = os.path.basename(path)
     mall_id = mallpath[:-4]
     return mall_id
     
-
+def convert_str_to_bool(str):
+    if str=="true":
+        return True
+    else:
+        return False
     
 def write_res_to_file(dic,respath):
     with open(respath,mode = 'w',encoding='utf-8') as f:
@@ -175,7 +181,17 @@ def remove_replicate_res(respath):
     
     write_res_to_file(dict,respath)
     
-
+def get_fix_date(dates):
+    dates = pd.to_datetime(dates)
+    length = len(dates)
+    a_index= []
+    b_index = []
+    for i in range(length):
+        if dates[i].day<25:
+            a_index.append(i)
+        else:
+            b_index.append(i)
+    return a_index,b_index
 
 if __name__=="__main__":
     # a = [1,1,3,4,5]
@@ -184,8 +200,8 @@ if __name__=="__main__":
     # arr = ['a','b','c','c']
     # labels = convertLabels(arr,"1")
     # print(getlabels_detail(labels,'1'))
-    # compare_res(pardir+'/data/res/rf_100_change_label.csv',pardir+'/data/res/rf_max.csv')
-    compare_res(pardir+'/data/res/rf_100_change_label_remove.csv',pardir+'/data/res/rf_max.csv')
+    compare_res(pardir+'/data/res/rf_max.csv',pardir+'/data/res/rf_max_divde10_estima100.csv')
+    # compare_res(pardir+'/data/res/rf_100_change_label_remove.csv',pardir+'/data/res/rf_max.csv')
     # remove_replicate_res(pardir+'/data/res/rfnew.csv')
     # getaccuracy(pardir+'/data/modeloutput')
     
