@@ -200,7 +200,7 @@ if __name__=="__main__":
     # arr = ['a','b','c','c']
     # labels = convertLabels(arr,"1")
     # print(getlabels_detail(labels,'1'))
-    compare_res(pardir+'/data/res/rf_max.csv',pardir+'/data/res/rf_max_divde10_estima100.csv')
+    compare_res(pardir+'/data/res/rf_max_divde10_convert_feature_add_ll_3.csv',pardir+'/data/res/rf_max_divde10_convert_feature_add_ll_5.csv')
     # compare_res(pardir+'/data/res/rf_100_change_label_remove.csv',pardir+'/data/res/rf_max.csv')
     # remove_replicate_res(pardir+'/data/res/rfnew.csv')
     # getaccuracy(pardir+'/data/modeloutput')

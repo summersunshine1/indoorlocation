@@ -10,9 +10,47 @@ mallshop_dic_dir = pardir+'/data/mall_shop_dic/'
 mallshop_train_dic_dir = pardir+'/data/mall_shop_dic_train/'
 mall_wifi_dic_dir = pardir+'/data/mall_wifi_dic/'
 mall_bssid_dic_path = pardir +'/data/mall_choose_bssid_dic'
+mall_mix_bssid_path = pardir +'/data/mall_mix_bssid_dic_remove_3_20_remove_hot'
 middle_path = pardir+'/data/middle'
 
 mallshop_dic_add_conect_dir = pardir+'/data/mall_shop_add_connect/'
+mall_bssid_arr_dir = pardir+'/data/mall_bssid/'
+
+def getmall_important_bssid(paths):
+    for path in paths:
+        bssidset = set()
+        data = pd.read_csv(path)
+        mall_id = os.path.basename(path)[:-4]
+        shop_ids = data['shop_id']
+        wifi_infos = data['wifi_infos']
+        length = len(shop_ids)
+        shop_wifi_dic = {}
+        train_index,valid_index = get_fix_date(data['time_stamp'])
+        for i in train_index:
+            shop_id = shop_ids[i]
+            wifi_info = wifi_infos[i]
+            bssids,strengths,connects = process_wifi_info(wifi_info)
+            # str = [int(t) for t in strengths]
+            dic = dict(zip(bssids, strengths))
+            res = sorted(dic.items(),key=lambda d:d[1])
+            list1, list2 = zip(*res)
+            connects = np.array(connects)
+            bssids = np.array(bssids)
+            connect = bssids[connects=='true']
+            # print(res)
+            if len(list1)<3:
+                for b in list1:
+                    bssidset.add(b)
+                continue
+            else:
+                for b in list1[:3]:
+                    bssidset.add(b)
+            for c in connects:
+                bssidset.add(c)
+        print(mall_id)    
+        print(len(bssidset))  
+        
+        write_dic(bssidset,mall_bssid_arr_dir+mall_id)     
 
 
 def get_mall_shop_info_train(paths):
@@ -161,7 +199,7 @@ def get_important_shop_bssid_connect(filelist):
                 # break
                 length = len(connects[connects=="true"])
                 tlength = len(connects)
-                if length/tlength>0.1 and tlength>3:
+                if length<tlength and length>1:
                     mall_bssid_set.add(bssid)
                 str = [int(t) for t in strengths]
                 # if len(str)>2:
@@ -173,7 +211,7 @@ def get_important_shop_bssid_connect(filelist):
             dict = sorted(shop_impor_dic.items(),key=lambda d:d[1])
             a = [d[1] for d in dict]
             b = [d[0] for d in dict]
-            for t in b[-15:]:
+            for t in b[-20:]:
                 mall_bssid_set.add(t)
                 # tempset.add(t)
         bssiddics[mall_id] = list(mall_bssid_set)
@@ -191,8 +229,8 @@ def get_mall_wifi_dic_threading():
     for file in filelist:
         mall_id = os.path.basename(file) 
         path = mall_wifi_dic_dir+mall_id
-        if os.path.exists(path):
-            continue
+        # if os.path.exists(path):
+            # continue
         newfiles.append(file)
     length = len(newfiles)    
     processThread1 = threading.Thread(target=get_mall_wifi_dic, args=[newfiles[:int(length*0.5)]]) # <- 1 element list
@@ -208,8 +246,8 @@ def get_mall_shop_dic_threading():
     for file in filelist:
         mall_id = os.path.basename(file)[:-4]
         path = mallshop_dic_add_conect_dir+mall_id
-        if os.path.exists(path):
-            continue
+        # if os.path.exists(path):
+            # continue
         newfiles.append(file)
     length = len(newfiles)    
     processThread1 = threading.Thread(target=getmall_shop_add_connect, args=[newfiles[:int(length*0.5)]]) # <- 1 element list
@@ -219,7 +257,35 @@ def get_mall_shop_dic_threading():
     processThread1.join()
     processThread2.join()
     
-        
+def get_mall_shop_bssid_threading():
+    filelist = listfiles(malldir)
+    newfiles = []
+    for file in filelist:
+        mall_id = os.path.basename(file)[:-4]
+        path = mall_bssid_arr_dir+mall_id
+        # if os.path.exists(path):
+            # continue
+        newfiles.append(file)
+    length = len(newfiles)    
+    processThread1 = threading.Thread(target=getmall_important_bssid, args=[newfiles[:int(length*0.5)]]) # <- 1 element list
+    processThread1.start()
+    processThread2 = threading.Thread(target=getmall_important_bssid, args=[newfiles[int(length*0.5):]])  # <- 1 element list
+    processThread2.start()
+    processThread1.join()
+    processThread2.join()
+    
+def getunionset():
+    mall_bssid_dic = read_dic(mall_bssid_dic_path)
+    files =listfiles(mall_bssid_arr_dir)
+    mall_dic = {}
+    for file in files:
+        mall_id = os.path.basename(file)
+        bssid1 = set(mall_bssid_dic[mall_id])
+        bssid2 = set(read_dic(file))
+        mall_dic[mall_id] = bssid1&bssid2
+        print(mall_id + ":" + str(len(bssid1)) +" "+ str(len(bssid2))+" union:"+str(len(mall_dic[mall_id])))
+    write_dic(mall_dic,mall_mix_bssid_path)
+    
 if __name__=="__main__":
     # print(read_dic(mall_wifi_dic_dir+'m_6803'))
     # get_mall_wifi_dic([mallshop_dic_dir+'m_2270'])  
@@ -237,3 +303,6 @@ if __name__=="__main__":
     get_important_shop_bssid_connect(filelist)
     # filelist = listfiles(malldir)
     # getmall_shop_add_connect(filelist)
+    get_mall_shop_bssid_threading()
+    
+    getunionset()

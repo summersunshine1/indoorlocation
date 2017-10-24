@@ -13,19 +13,23 @@ from sklearn.ensemble import RandomForestClassifier
 from getPath import *
 from sklearn.feature_selection import chi2
 from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import SelectFromModel
 pardir = getparentdir()
 
 mallshop_dic_dir = pardir+'/data/mall_shop_dic/'
 mall_bssid_dic_path = pardir +'/data/mall_choose_bssid_dic'
+mall_mix_bssid_path = pardir +'/data/mall_mix_bssid_dic_remove_3_20_remove_hot'
 newlabels_dir = pardir+'/data/newlabels/'
 newtrain_dir = pardir+'/data/newtrain/'
 mall_dir = pardir+'/data/mall/'
 model_dir = pardir+'/data/model/'
 test_mall_dir = pardir+'/data/rawtestmall/'
-res_path = pardir+'/data/res/rf_max_divde10_estima100.csv'
+res_path = pardir+'/data/res/rf_max_divde10_convert_feature_add_ll.csv'
 evaluate_b_path = pardir+'/data/evaluation_b.csv'
 middle_path = pardir+'/data/modeloutput'
 temp_path = pardir+'/data/tempout'
+
+mall_bssid_arr_dir = pardir+'/data/mall_bssid/'
 
 def get_train(filelist,mall_bssid_dic,istest):
     print(len(filelist))
@@ -40,18 +44,27 @@ def get_train(filelist,mall_bssid_dic,istest):
         wifi_infos = data['wifi_infos']
         shop_ids = data['shop_id']
         dates = data['time_stamp']
+        user_ids = data['user_id']
+        user_ids = np.array([[int(t[2:])] for t in user_ids])
         labels = convertLabels(shop_ids,newlabels_dir+mall_id)
         labels = np.array([[t] for t in labels])
-        mallbssids = mall_bssid_dic[mall_id]
+        mallbssids = sorted(list(mall_bssid_dic[mall_id]))
+        # mallbssids = read_dic(mall_bssid_arr_dir+mall_id)
         bssid_dic = get_bssid_dic(mallbssids)
         train_x = []
+        whetherconnect = []
+        lenbssid = []
+        maxbssid = []
         for wifi_info in wifi_infos:
             bssid_strength_dic = {}
             bssid_connect = {}
             # d = 1/np.power(10,10)
             train_d = np.array([-10]*(len(mallbssids)))
             bssids,strengths,connects = process_wifi_info(wifi_info)
-            
+            if len(connects[connects=="true"])>=1:
+                whetherconnect.append([1])
+            else:
+                whetherconnect.append([0])
             length = len(bssids)
             for i in range(length):
                 bssid = bssids[i]
@@ -66,20 +79,27 @@ def get_train(filelist,mall_bssid_dic,istest):
                 strength = np.max(v1)
                 train_d[index] = round(strength/10)
             train_x.append(train_d)
+            lenbssid.append(length)
+            maxbssid.append(round(np.max(strength)/15))
         longitudes = np.array(data['longitude'])
         latitudes = np.array(data['latitude'])
-        longitudes = np.array([[t] for t in longitudes])
-        latitudes = np.array([[t] for t in latitudes])
+        longitudes = np.array([[round(t,5)] for t in longitudes])
+        latitudes = np.array([[round(t,5)] for t in latitudes])
         # print(np.shape(train_x))
         # print(np.shape(longitudes))
-        # data = np.hstack((train_x,longitudes))
+        connects = np.array(whetherconnect)
+        lenbssid = np.array([[t] for t in lenbssid])
+        maxbssid = np.array([[t] for t in maxbssid])
+        train_x = np.hstack((train_x,latitudes))
+        train_x = np.hstack((train_x,longitudes))
+        # train_x = np.hstack((train_x,maxbssid))
         # data = np.hstack((data,latitudes))
-        data = np.hstack((train_x,labels))
+        # data = np.hstack((data,labels))
         # write_dic(data,newtrain_dir+mall_id)
         # train_x = np.power(10,np.array(train_x)/np.max(train_x,))
         train_x = np.array(train_x)
-      
-        # print(max)
+       
+        #  print(max)
         # train_x =  np.power(10,np.array(train_x)/10)
         # print(data)
         # mean = [[t] for t in np.mean(train_x,1)]
@@ -101,8 +121,8 @@ def get_train(filelist,mall_bssid_dic,istest):
         
         train_index,valid_index = get_fix_date(dates)
         # X_train, X_test, y_train, y_test = train_test_split(train_x, labels, test_size=0.2, random_state=42)
-        # features = np.shape(X_train)[1]
-        # print(features)
+        features = np.shape(train_x)[1]
+        print(features)
         # ch = SelectKBest(chi2, k=int(features*0.8))
         # X_new = ch.fit_transform(X_train, y_train)
         # clf = SVC(kernel ='linear')
@@ -123,19 +143,20 @@ def get_train(filelist,mall_bssid_dic,istest):
         
         # X_train = X_train[arr!=0]
         # y_train = y_train[arr!=0]
-        
+        # pca=PCA(n_components=int(np.shape(X_train)[1]*0.8))
+        # X_train=pca.fit_transform(X_train)
         X_test = train_x[valid_index,:]
+        # X_test=pca.transform(X_test)
         y_test = labels[valid_index,:]
 
-        clf = RandomForestClassifier(random_state=0,max_features = 'auto',n_estimators=50)
+        clf = RandomForestClassifier(random_state=0,max_features = 'auto',n_estimators=50,n_jobs=-1)
         clf.fit(X_train, y_train) 
 
         # print(clf.oob_score_)
-        # list1 = list(clf.feature_importances_)
-        # list1 = sorted(list1)
+        list1 = list(clf.feature_importances_)
+        list1 = sorted(list1)
         # print(list1[-10:])
         # X_test_new = ch.transform(X_test)
-
         p = clf.predict(X_test)
         if not istest:
             clf.fit(train_x, labels)
@@ -152,17 +173,22 @@ def predict(filelist,mall_bssid_dic):
     if os.path.exists(res_path):
         os.remove(res_path)
     for file in filelist:
+        lenbssid = []
         mall_id = get_mallid_from_mallpath(file)
         data = pd.read_csv(file)
         wifi_infos = data['wifi_infos']
         row_ids = data['row_id']
-        print(len(row_ids))
-        mallbssids = mall_bssid_dic[mall_id]
+        
+        print(mall_id)
+        mallbssids = sorted(list(mall_bssid_dic[mall_id]))
+        longitudes = np.array(data['longitude'])
+        latitudes = np.array(data['latitude'])
+        # mallbssids = read_dic(mall_bssid_arr_dir+mall_id)
         bssid_dic = get_bssid_dic(mallbssids)
         train_x = []
         for wifi_info in wifi_infos:
             bssid_strength_dic = {}
-            d = np.power(10,-10)
+            # d = np.power(10,-10)
             train_d = np.array([-10]*len(mallbssids))
             bssids,strengths,connects = process_wifi_info(wifi_info)
             length = len(bssids)
@@ -179,13 +205,23 @@ def predict(filelist,mall_bssid_dic):
                 strength = np.max(v1)
                 train_d[index] = int(round(strength/10))
             train_x.append(train_d)
-        maxarr = np.max(train_x,1)
-        max = np.array([[t] for t in maxarr])
-        min = np.array([[t] for t in np.min(train_x,1)])
-        arr = max-min
-        arr = np.array([t[0] for t in arr])
-        print(len(arr[arr==0]))
-
+            lenbssid.append([length])
+           
+        longitudes = np.array([[round(t,5)] for t in longitudes])
+        latitudes = np.array([[round(t,5)] for t in latitudes])
+        train_x = np.hstack((train_x,latitudes))
+        train_x = np.hstack((train_x,longitudes))
+        
+        # maxarr = np.max(train_x,1)
+        # max = np.array([[t] for t in maxarr])
+        # min = np.array([[t] for t in np.min(train_x,1)])
+        # arr = max-min
+        # arr = np.array([t[0] for t in arr])
+        # print(len(arr[arr==0]))
+        user_ids = data['user_id']
+        user_ids = np.array([[int(t[2:])] for t in user_ids])
+        lenbssid = np.array(lenbssid)
+        # train_x = np.hstack((train_x,lenbssid))
         clf = joblib.load(model_dir+mall_id)
         p = clf.predict(train_x)
         labels = getlabels_detail(p,newlabels_dir+mall_id)
@@ -226,7 +262,10 @@ def get_bssid_dic(bssids):
     return dic
         
 if __name__=="__main__":
-    mall_bssid_dic = read_dic(mall_bssid_dic_path)
+    # mall_bssid_dic = read_dic(mall_bssid_dic_path)
+    mall_bssid_dic = read_dic(mall_mix_bssid_path)
+    # print(sorted(list(mall_bssid_dic['m_4079'])))
+    # print(sorted(list(mall_bssid_dic['m_4079'])))
     # print(len(mall_bssid_dic.keys()))
     # files = []
     # for k,v in mall_bssid_dic.items():
@@ -239,12 +278,12 @@ if __name__=="__main__":
         
     # print(files)
     # print(len(files))
-    get_train(files,mall_bssid_dic,0)
-    # create_model_threading(mall_bssid_dic,1)
+    # get_train(files,mall_bssid_dic,0)
+    # create_model_threading(mall_bssid_dic,0)
     files = listfiles(test_mall_dir)
     # print(len(files))
-    # predict(files,mall_bssid_dic)
-    # remove_replicate_res(res_path)
+    predict(files,mall_bssid_dic)
+    remove_replicate_res(res_path)
     # read_dic(new
         
                 
