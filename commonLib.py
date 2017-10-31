@@ -10,8 +10,19 @@ from sklearn.externals import joblib
 import threading
 import time
 from getPath import *
+from math import radians, cos, sin, asin, sqrt
 pardir = getparentdir()
 
+def mkdir(dir, folder):
+    directory = dir+folder
+    if os.path.exists(directory):
+        return directory
+    try:
+        os.mkdir(directory)
+    except OSError as exc:
+        if exc.errno != errno.EEXIST:
+            raise
+    return directory
 
 def write_dic(dic,path):
     with open(path,'wb') as f:
@@ -91,9 +102,9 @@ def getlabels_detail(labels,pickle_path):
     arr = le.inverse_transform(labels)
     return arr   
     
-def get_labels(pickle_path,arr):
+def get_labels(arr,pickle_path):
     clf = joblib.load(pickle_path)
-    labels = le.transform(arr)
+    labels = clf.transform(arr)
     return labels
     
 def process_wifi_info(wifi_info):
@@ -154,18 +165,22 @@ def getlowmall(middlepath):
         arr = []
         for line in lines:
             a = float(line.split(':')[1])
-            if a<0.8:
+            if a<0.7:
                 malls.append(line.split(':')[0])
     return malls
     
 def getaccuracy(middleoutput):
     path = middleoutput
+    i = 0
     with open(path,'r',encoding='utf-8') as f:
         lines = f.readlines()
         arr = []
         for line in lines:
-            a = float(line.split(':')[1])
+            if i==42:
+                break
+            a = float(line.split(':')[1].split()[0])
             arr.append(a)
+            i+=1
         m = np.mean(arr)
         print(m)
         
@@ -192,6 +207,27 @@ def get_fix_date(dates):
         else:
             b_index.append(i)
     return a_index,b_index
+    
+def get_dis_from_strength(strength):
+    t = (strength+50)/-20
+    return np.power(10,t)
+    
+def haversine(lon1, lat1, lon2, lat2):
+    """
+    Calculate the great circle distance between two points 
+    on the earth (specified in decimal degrees)
+    """
+    # 将十进制度数转化为弧度
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    # haversine公式
+    dlon = lon2 - lon1 
+    dlat = lat2 - lat1 
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a)) 
+    r = 6371 # 地球平均半径，单位为公里
+    return c * r * 1000
+
 
 if __name__=="__main__":
     # a = [1,1,3,4,5]
@@ -200,10 +236,11 @@ if __name__=="__main__":
     # arr = ['a','b','c','c']
     # labels = convertLabels(arr,"1")
     # print(getlabels_detail(labels,'1'))
-    compare_res(pardir+'/data/res/rf_max_divde10_convert_feature_add_ll_3.csv',pardir+'/data/res/rf_max_divde10_convert_feature_add_ll_5.csv')
+    # compare_res(pardir+'/data/res/rf_dis_model_shop.csv',pardir+'/data/res/xg_ovr.csv')
     # compare_res(pardir+'/data/res/rf_100_change_label_remove.csv',pardir+'/data/res/rf_max.csv')
     # remove_replicate_res(pardir+'/data/res/rfnew.csv')
-    # getaccuracy(pardir+'/data/modeloutput')
+    getaccuracy(pardir+'/data/modout/modeloutput_xg_shop.txt')
+    # print(getlowmall(pardir+'/data/modeloutput_150_add_big'))
     
     
 

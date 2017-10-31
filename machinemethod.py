@@ -212,7 +212,12 @@ def write_pca():
     while 1:
         time.sleep(1000)
     
-
+def my_custom_loss_func(ground_truth, predictions):
+    ground_truth = np.array(ground_truth)
+    print(ground_truth)
+    print(predictions)
+    predictions = np.array(predictions)
+    return len(ground_truth[ground_truth == predictions])/len(ground_truth)
         
 def create_model(paths):
     for path in paths:
@@ -251,7 +256,9 @@ def create_model_split(paths):
         write_middle_res(lines)
         joblib.dump(clf, model_dir+mall_id)
         
-
+def write_middle_res(lines):
+    with open(pardir+'/data/modeloutput', 'a',encoding = 'utf-8') as f:
+        f.writelines(lines+'\n')
         
 def train():
     files = listfiles(pca_train_dir)

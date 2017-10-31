@@ -7,7 +7,7 @@ from commonLib import *
 from getPath import *
 pardir = getparentdir()
 
-mall_dir = pardir+'/data/mall'
+mall_dir = pardir+'/data/mall/'
 evaluate_public_path = pardir+'/data/evaluation_public.csv'
 evaluate_a_path = pardir+'/data/evaluation_a.csv'
 evaluate_b_path = pardir+'/data/evaluation_b.csv'
@@ -148,6 +148,7 @@ def create_model():
     row_ids = data['row_id']
     mall_ids = data['mall_id']
     wifi_infos = data['wifi_infos']
+    
     length = len(row_ids)
     resdic = {}
     for i in range(length):
@@ -188,7 +189,53 @@ def create_model():
                 # plt.show()
         # else:
             # print("zero")
+def getres(files):
+    for file in files:
+        data = pd.read_csv(file)
+        wifi_infos = data['wifi_infos']
+        mall_id = get_mallid_from_mallpath(file)
+        shop_ids = data['shop_id']
+        countdic = {}
+        c = 0
+        for i in range(len(wifi_infos)):
+            wifi_info = wifi_infos[i]
+            bssids,strengths = process_wifi_info(wifi_info)
+            dic = read_dic(mall_dic_dir+mall_id)
+            # print(dic.keys())
+            for j in range(len(bssids)):
+                bssid = bssids[j]
+                strength = int(strengths[j])
+                for shop_id,bssid_info in dic.items():
+                    if bssid in bssid_info.keys() and (strength<=int(bssid_info[bssid]['range'][1]) and strength>=int(bssid_info[bssid]['range'][0])):
+                        if not shop_id in countdic:
+                            countdic[shop_id]=0
+                        weight_dic = bssid_info[bssid]['weight']
+                        countdic[shop_id]+=getweight(strength,weight_dic)#*weightarr[int(np.floor(strength/20))]
+            dict = sorted(countdic.items(),key=lambda d:d[1])
+            a = [d[1] for d in dict]
+            b = [d[0] for d in dict]
+            if b[-1] == shop_ids[i]:
+                c+=1
+                
+        print(c/len(wifi_infos))
+                
+    
 
+            
+def write_res_to_file(dic):
+    with open(respath,mode = 'w',encoding='utf-8') as f:
+        f.writelines("row_id,shop_id\n")
+        for k,v in dic.items():
+            lines = str(k)+','+str(v)+'\n'
+            f.writelines(lines)
+          
+def append_res_file():
+    data = pd.read_csv(evaluate_b_path)
+    row_ids = data['row_id']
+    with open(respath,mode = 'a',encoding='utf-8') as f:
+        for row_id in row_ids:
+            lines = str(row_id)+',\n'
+            f.writelines(lines)
 
 if __name__=="__main__":
     # split_a_b()
@@ -197,11 +244,11 @@ if __name__=="__main__":
     # print(dic)
     # move_to_different_mallfiles()
     # process()
-    resdic = create_model()
-    write_res_to_file(resdic)
+    # resdic = create_model()
+    # write_res_to_file(resdic)
     # get_strength_range([1,5,7,8,15])
-    append_res_file()
+    # append_res_file()
     # getweight(-80,{'-90.1|-80.2':0.1})
-        
+    getres([mall_dir+'m_6803.csv'])   
     
 
